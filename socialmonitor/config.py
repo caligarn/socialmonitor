@@ -23,6 +23,11 @@ class Settings(BaseSettings):
     reddit_client_secret: str = ""
     youtube_api_key: str = ""
 
+    # Social listening (RapidAPI-based for Instagram, TikTok, YouTube Shorts)
+    rapidapi_key: str = ""
+    listening_keywords: str = "AI,artificial intelligence,LLM,GPT,machine learning"
+    listening_refresh_interval: int = 120  # minutes
+
     # Scheduling
     trend_refresh_interval: int = 60  # minutes
     influencer_refresh_interval: int = 360  # minutes
@@ -46,6 +51,14 @@ class Settings(BaseSettings):
     @property
     def has_youtube(self) -> bool:
         return bool(self.youtube_api_key)
+
+    @property
+    def has_rapidapi(self) -> bool:
+        return bool(self.rapidapi_key)
+
+    @property
+    def listening_keyword_list(self) -> list[str]:
+        return [k.strip() for k in self.listening_keywords.split(",") if k.strip()]
 
 
 settings = Settings()

@@ -12,6 +12,7 @@ from socialmonitor.trends import TrendCollector
 from socialmonitor.analytics import AnalyticsTracker
 from socialmonitor.influencers import InfluencerTracker
 from socialmonitor.content import ContentPlanner
+from socialmonitor.listening import SocialListeningService
 
 
 class DashboardApp(App):
@@ -51,6 +52,8 @@ class DashboardApp(App):
                 yield DataTable(id="influencers-table")
             with TabPane("Content Plans", id="tab-plans"):
                 yield DataTable(id="plans-table")
+            with TabPane("Social Listening", id="tab-listening"):
+                yield DataTable(id="listening-table")
         yield Footer()
 
     def on_mount(self) -> None:
@@ -67,6 +70,7 @@ class DashboardApp(App):
             self._load_accounts(session)
             self._load_influencers(session)
             self._load_plans(session)
+            self._load_listening(session)
         finally:
             session.close()
 
@@ -131,4 +135,20 @@ class DashboardApp(App):
                 plan.content_type or "",
                 plan.status or "",
                 plan.scheduled_for.strftime("%Y-%m-%d %H:%M") if plan.scheduled_for else "-",
+            )
+
+    def _load_listening(self, session) -> None:
+        table = self.query_one("#listening-table", DataTable)
+        table.clear(columns=True)
+        table.add_columns("Platform", "Author", "Content", "Likes", "Views", "Keyword")
+
+        svc = SocialListeningService(session)
+        for m in svc.get_top_mentions(limit=50):
+            table.add_row(
+                m.platform or "",
+                m.author or "",
+                (m.content or "")[:60],
+                f"{m.likes:,}" if m.likes else "-",
+                f"{m.views:,}" if m.views else "-",
+                m.keyword_matched or "",
             )

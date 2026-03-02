@@ -449,3 +449,87 @@ async def content_suggest(count: int = 5, db: Session = Depends(get_db)):
     gen = ContentGenerator(db)
     topics = await gen.suggest_topics(count=count)
     return {"topics": topics}
+
+
+# ---------------------------------------------------------------------------
+# Social listening
+# ---------------------------------------------------------------------------
+
+class ListeningCollectRequest(BaseModel):
+    keywords: list[str] | None = None
+
+@app.post("/api/listening/collect")
+async def listening_collect(
+    platform: str | None = None,
+    body: ListeningCollectRequest = ListeningCollectRequest(),
+    db: Session = Depends(get_db),
+):
+    from socialmonitor.listening import SocialListeningService
+
+    svc = SocialListeningService(db)
+    if platform:
+        mentions = await svc.collect_platform(platform, keywords=body.keywords)
+    else:
+        mentions = await svc.collect_all(keywords=body.keywords)
+    return {"mentions_collected": len(mentions)}
+
+
+@app.get("/api/listening/mentions")
+def listening_mentions(
+    platform: str | None = None,
+    keyword: str | None = None,
+    limit: int = 50,
+    db: Session = Depends(get_db),
+):
+    from socialmonitor.listening import SocialListeningService
+
+    svc = SocialListeningService(db)
+    mentions = svc.get_mentions(platform=platform, keyword=keyword, limit=limit)
+    return [
+        {
+            "id": m.id,
+            "platform": m.platform,
+            "author": m.author,
+            "author_followers": m.author_followers,
+            "content": m.content,
+            "url": m.url,
+            "keyword_matched": m.keyword_matched,
+            "likes": m.likes,
+            "comments": m.comments,
+            "shares": m.shares,
+            "views": m.views,
+            "sentiment": m.sentiment,
+            "published_at": m.published_at.isoformat() if m.published_at else None,
+            "captured_at": m.captured_at.isoformat() if m.captured_at else None,
+        }
+        for m in mentions
+    ]
+
+
+@app.get("/api/listening/top")
+def listening_top(limit: int = 20, db: Session = Depends(get_db)):
+    from socialmonitor.listening import SocialListeningService
+
+    svc = SocialListeningService(db)
+    mentions = svc.get_top_mentions(limit=limit)
+    return [
+        {
+            "id": m.id,
+            "platform": m.platform,
+            "author": m.author,
+            "content": m.content,
+            "url": m.url,
+            "likes": m.likes,
+            "comments": m.comments,
+            "views": m.views,
+        }
+        for m in mentions
+    ]
+
+
+@app.get("/api/listening/summary")
+def listening_summary(db: Session = Depends(get_db)):
+    from socialmonitor.listening import SocialListeningService
+
+    svc = SocialListeningService(db)
+    return svc.get_platform_summary()

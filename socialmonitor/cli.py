@@ -381,6 +381,130 @@ def content_suggest(count):
 
 
 # ---------------------------------------------------------------------------
+# Social listening
+# ---------------------------------------------------------------------------
+
+@main.group()
+def listening():
+    """Monitor mentions across Instagram, TikTok & YouTube Shorts."""
+
+
+@listening.command("collect")
+@click.option("--platform", "-p", default=None, help="instagram, tiktok, or youtube_shorts")
+@click.option("--keywords", "-k", default=None, help="Comma-separated keywords to search")
+def listening_collect(platform, keywords):
+    """Fetch mentions from social platforms."""
+    from socialmonitor.listening import SocialListeningService
+
+    session = get_session()
+    svc = SocialListeningService(session)
+    kw_list = [k.strip() for k in keywords.split(",")] if keywords else None
+
+    async def _run():
+        if platform:
+            mentions = await svc.collect_platform(platform, keywords=kw_list)
+            console.print(f"[green]Collected {len(mentions)} mentions from {platform}[/]")
+        else:
+            mentions = await svc.collect_all(keywords=kw_list)
+            console.print(f"[green]Collected {len(mentions)} mentions across all platforms[/]")
+
+    asyncio.run(_run())
+    session.close()
+
+
+@listening.command("show")
+@click.option("--platform", "-p", default=None)
+@click.option("--keyword", "-k", default=None)
+@click.option("--limit", "-n", default=30)
+def listening_show(platform, keyword, limit):
+    """Display recent mentions."""
+    from socialmonitor.listening import SocialListeningService
+
+    session = get_session()
+    svc = SocialListeningService(session)
+    mentions = svc.get_mentions(platform=platform, keyword=keyword, limit=limit)
+
+    table = Table(title="Social Mentions")
+    table.add_column("Platform", width=14)
+    table.add_column("Author", width=18)
+    table.add_column("Content", min_width=30)
+    table.add_column("Likes", justify="right", width=8)
+    table.add_column("Views", justify="right", width=10)
+    table.add_column("Keyword", width=12)
+
+    for m in mentions:
+        table.add_row(
+            m.platform or "",
+            m.author or "",
+            (m.content or "")[:60],
+            f"{m.likes:,}" if m.likes else "-",
+            f"{m.views:,}" if m.views else "-",
+            m.keyword_matched or "",
+        )
+
+    console.print(table)
+    session.close()
+
+
+@listening.command("top")
+@click.option("--limit", "-n", default=20)
+def listening_top(limit):
+    """Show top mentions by engagement."""
+    from socialmonitor.listening import SocialListeningService
+
+    session = get_session()
+    svc = SocialListeningService(session)
+    mentions = svc.get_top_mentions(limit=limit)
+
+    table = Table(title="Top Mentions by Engagement")
+    table.add_column("Platform", width=14)
+    table.add_column("Author", width=18)
+    table.add_column("Content", min_width=30)
+    table.add_column("Likes", justify="right", width=8)
+    table.add_column("Comments", justify="right", width=8)
+    table.add_column("Views", justify="right", width=10)
+
+    for m in mentions:
+        table.add_row(
+            m.platform or "",
+            m.author or "",
+            (m.content or "")[:60],
+            f"{m.likes:,}" if m.likes else "-",
+            f"{m.comments:,}" if m.comments else "-",
+            f"{m.views:,}" if m.views else "-",
+        )
+
+    console.print(table)
+    session.close()
+
+
+@listening.command("summary")
+def listening_summary():
+    """Show per-platform summary of collected mentions."""
+    from socialmonitor.listening import SocialListeningService
+
+    session = get_session()
+    svc = SocialListeningService(session)
+
+    table = Table(title="Social Listening Summary")
+    table.add_column("Platform", width=16)
+    table.add_column("Mentions", justify="right", width=10)
+    table.add_column("Total Likes", justify="right", width=12)
+    table.add_column("Total Views", justify="right", width=14)
+
+    for entry in svc.get_platform_summary():
+        table.add_row(
+            entry["platform"],
+            str(entry["mention_count"]),
+            f"{entry['total_likes']:,}",
+            f"{entry['total_views']:,}",
+        )
+
+    console.print(table)
+    session.close()
+
+
+# ---------------------------------------------------------------------------
 # Dashboard
 # ---------------------------------------------------------------------------
 

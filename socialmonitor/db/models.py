@@ -152,6 +152,32 @@ class InfluencerMetric(Base):
 
 
 # ---------------------------------------------------------------------------
+# Social listening
+# ---------------------------------------------------------------------------
+
+class Mention(Base):
+    """A mention or post discovered by the social listening service."""
+
+    __tablename__ = "mentions"
+
+    id = Column(Integer, primary_key=True)
+    platform = Column(String(50), nullable=False, index=True)  # instagram, tiktok, youtube_shorts
+    author = Column(String(300))
+    author_followers = Column(Integer)
+    content = Column(Text)
+    url = Column(String(1000))
+    keyword_matched = Column(String(200))
+    likes = Column(Integer)
+    comments = Column(Integer)
+    shares = Column(Integer)
+    views = Column(Integer)
+    sentiment = Column(String(20))  # positive, negative, neutral
+    published_at = Column(DateTime)
+    captured_at = Column(DateTime, default=datetime.utcnow, index=True)
+    meta_json = Column(Text)
+
+
+# ---------------------------------------------------------------------------
 # Content planning & generation
 # ---------------------------------------------------------------------------
 
