@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.backends._legacy:_Backend"
+
+[project]
+name = "socialmonitor"
+version = "0.1.0"
+description = "Social media monitoring, AI influencer tracking, and AI-powered content planning system"
+requires-python = ">=3.11"
+
+[project.scripts]
+socialmonitor = "socialmonitor.cli:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
+[tool.setuptools.packages.find]
+include = ["socialmonitor*"]
