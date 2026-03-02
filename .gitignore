@@ -24,5 +24,3 @@ htmlcov/
 .mypy_cache/
 node_modules/
 .next/
-web/node_modules/
-web/.next/
