@@ -1,0 +1,9 @@
+{
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/index" }
+  ],
+  "buildCommand": "cd web && npm run build",
+  "outputDirectory": "web/.next",
+  "framework": "nextjs",
+  "installCommand": "pip install -r requirements.txt && cd web && npm install"
+}
